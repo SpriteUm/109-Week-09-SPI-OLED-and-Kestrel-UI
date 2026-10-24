@@ -180,6 +180,32 @@ void oled_flush(void)
     oled_send_data(s_oled_buffer, OLED_BUFFER_SIZE);
 }
 
+void oled_dump_region(int x, int y, int width, int height)
+{
+    if (x < 0 || y < 0 || width <= 0 || height <= 0 ||
+        x + width > OLED_WIDTH || y + height > OLED_HEIGHT) {
+        ESP_LOGE("FORENSIC", "Invalid framebuffer region: x=%d y=%d width=%d height=%d",
+                 x, y, width, height);
+        return;
+    }
+
+    int first_page = y / 8;
+    int last_page = (y + height - 1) / 8;
+    ESP_LOGI("FORENSIC", "Framebuffer dump: x=%d..%d, y=%d..%d",
+             x, x + width - 1, y, y + height - 1);
+
+    for (int page = first_page; page <= last_page; page++) {
+        for (int col = x; col < x + width; col++) {
+            uint8_t value = s_oled_buffer[page * OLED_WIDTH + col];
+            printf("Page %d Col %3d: 0x%02X [b7..b0=", page, col, value);
+            for (int bit = 7; bit >= 0; bit--) {
+                printf("%d", (value >> bit) & 1);
+            }
+            printf("]\n");
+        }
+    }
+}
+
 // ============================================================================
 // ฟังก์ชันกราฟิกระดับพิกเซลและรูปทรงเรขาคณิต (Bitwise Engine)
 // ============================================================================

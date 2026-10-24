@@ -32,6 +32,7 @@ void oled_init_display(void);
 void oled_clear(void);
 void oled_fill_pattern(uint8_t pattern);
 void oled_flush(void);
+void oled_dump_region(int x, int y, int width, int height);
 
 // ฟังก์ชันกราฟิกระดับพิกเซลและรูปทรงเรขาคณิต
 void oled_draw_pixel(int x, int y, bool color);

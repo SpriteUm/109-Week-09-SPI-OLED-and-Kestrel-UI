@@ -384,5 +384,8 @@ Server: Kestrel
 2. จากการทำ HTTP Forensics หากไม่มีการตรวจสอบเงื่อนไข `RawMax <= RawMin` ในโค้ด จะเกิด Exception ชนิดใดขึ้นในภาษา C# และส่งผลต่อการทำงานของเซิร์ฟเวอร์อย่างไร?
 3. อธิบายสาเหตุทางเทคนิคว่าทำไมคำขอ HTTP POST ที่ไม่มี Header `Content-Type: application/json` จึงถูกปฏิเสธด้วยรหัสสถานะ `415 Unsupported Media Type`?
 
-
+### แนวคำตอบ
+1. การคำนวณที่ Kestrel ทำให้ปรับค่า Zero/Span, ช่วงสเกล และหน่วยได้จากเซิร์ฟเวอร์โดยไม่ต้องแก้และแฟลช firmware ใหม่ ทั้งยังรวมการประมวลผลและการแสดงผลข้อมูลไว้ที่จุดเดียว อย่างไรก็ตาม ESP32 ควรยังมี logic ที่จำเป็นต่อความปลอดภัยและการทำงานพื้นฐานในกรณีเครือข่ายหรือเซิร์ฟเวอร์ขัดข้อง
+2. ตามโค้ดตัวอย่าง `Compute()` แปลงตัวตั้งเป็น `double` ก่อนหาร ดังนั้นเมื่อ `RawMax == RawMin` การหารแบบ floating-point จะได้ `NaN` หรือค่าอนันต์ตามตัวตั้ง โดยปกติ **ไม่เกิด `DivideByZeroException`** ใน C# (ข้อยกเว้นนี้เกิดกับการหารจำนวนเต็มด้วยศูนย์) แต่ถ้า `RawMax < RawMin` และไม่มีการตรวจสอบ `Math.Clamp()` จะโยน `ArgumentException` เพราะขอบเขตขั้นต่ำมากกว่าขอบเขตสูงสุด การตรวจ `RawMax <= RawMin` ใน `UpdateSettings()` จึงป้องกันช่วง calibration ที่ใช้ไม่ได้ และ `Program.cs` จับ `ArgumentException` แล้วตอบ `400 Bad Request` แทนการปล่อยให้ข้อมูลผิดพลาดเข้าสู่ระบบ
+3. Minimal API ต้องใช้ข้อมูลใน Body เป็น JSON เพื่อ bind เข้ากับโมเดลคำขอ เมื่อไม่มีหรือระบุ `Content-Type` ที่ไม่ใช่ `application/json` เซิร์ฟเวอร์ไม่สามารถเลือก JSON input formatter/parser ให้ Body ได้ จึงปฏิเสธด้วย `415 Unsupported Media Type`; ให้ส่ง Header `Content-Type: application/json` พร้อม JSON ที่ถูกต้อง
 
